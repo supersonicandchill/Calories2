@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuickFit Pro</title>
+
+<style>
+/* ---------------- GLOBAL ---------------- */
+* { margin:0; padding:0; box-sizing:border-box; font-family:Arial, sans-serif; }
+body { background:#f5f5f5; color:#111; display:flex; flex-direction:column; min-height:100vh; }
+h1 { text-align:center; margin-bottom:0.5em; }
+h2 { margin-bottom:0.5em; }
+section { display:none; }
+section.active { display:block; }
+main { flex:1; padding:1em; }
+
+/* ---------------- NAV ---------------- */
+nav { display:flex; background:#333; color:white; }
+nav button { flex:1; padding:0.6em; background:none; border:none; color:white; font-size:1em; cursor:pointer; }
+nav button.active { background:#555; }
+
+/* ---------------- TREND BARS ---------------- */
+#trend, #cal-history { margin-top:1em; gap:4px; display:flex; align-items:flex-end; height:120px; }
+.bar { width:22px; background:#4caf50; border-radius:3px; }
+
+/* ---------------- INPUTS ---------------- */
+input { padding:0.4em; margin-right:0.4em; width:80px; }
+button { padding:0.4em 0.8em; margin-top:0.4em; cursor:pointer; }
+
+/* ---------------- FOOD COLOR TAGS ---------------- */
+.food { padding:0.5em; margin:0.3em 0; border-radius:4px; color:white; }
+.green { background:#4caf50; }
+.yellow { background:#ffeb3b; color:black; }
+.red { background:#f44336; }
+
+/* ---------------- HABITS ---------------- */
+#habits ul { list-style:none; }
+#habits li { margin:0.5em 0; }
+
+/* ---------------- CAL BOX ---------------- */
+#cal-header { padding:1em; border-radius:6px; margin:1em 0; }
+
+/* ---------------- PROJECTION ---------------- */
+#projection-box { padding:1em; background:#eee; border-radius:6px; margin-top:1em; }
+
+/* ---------------- DECISION PROMPTS ---------------- */
+#prompt-box { padding:1em; background:#e8f5e9; border-radius:6px; margin-top:1em; }
+
+/* ---------------- STREAKS ---------------- */
+#streak-box { padding:1em; background:#e3f2fd; border-radius:6px; margin-top:1em; }
+</style>
+</head>
+
+<body>
+
+<h1>QuickFit Pro</h1>
+
+<nav>
+  <button class="active" data-tab="weight-tab">Weight</button>
+  <button data-tab="food-tab">Food</button>
+  <button data-tab="estimator-tab">Estimator</button>
+  <button data-tab="calories-tab">Calories</button>
+  <button data-tab="analysis-tab">Analysis</button>
+  <button data-tab="habits-tab">Habits</button>
+  <button data-tab="lessons-tab">Lessons</button>
+</nav>
+
+<main>
+
+<!---------------------------- WEIGHT TAB ---------------------------->
+<section id="weight-tab" class="active">
+  <h2>Daily Weight Log</h2>
+  <input id="weight-input" type="number" placeholder="lbs">
+  <button onclick="addWeight()">Log</button>
+
+  <div id="trend"></div>
+
+  <div id="projection-box">
+    <h3>Weight Loss Projection</h3>
+    <p id="projection-text"></p>
+  </div>
+</section>
+
+
+<!---------------------------- FOOD TAB ------------------------------->
+<section id="food-tab">
+  <h2>Green / Yellow / Red Foods</h2>
+
+  <h3>Green (high volume, low calorie)</h3>
+  <div class="food green">Vegetables</div>
+  <div class="food green">Fruit</div>
+  <div class="food green">Beans / Lentils / Oats</div>
+
+  <h3>Yellow (moderate calorie density)</h3>
+  <div class="food yellow">Rice</div>
+  <div class="food yellow">Pasta</div>
+  <div class="food yellow">Bread</div>
+
+  <h3>Red (calorie dense / trigger foods)</h3>
+  <div class="food red">Fried Food</div>
+  <div class="food red">Fast Food</div>
+  <div class="food red">Candy / Soda</div>
+</section>
+
+
+<!---------------------------- ESTIMATOR TAB ---------------------------->
+<section id="estimator-tab">
+  <h2>Calorie Estimator</h2>
+  <input id="grams" type="number" placeholder="grams">
+  <input id="cal100" type="number" placeholder="cal/100g">
+  <button onclick="estimateCalories()">Estimate</button>
+
+  <p id="cal-result"></p>
+  <button onclick="addEstimated()">Add to Daily Calories</button>
+</section>
+
+
+<!---------------------------- CALORIES TAB ---------------------------->
+<section id="calories-tab">
+  <h2>Daily Calories</h2>
+
+  <div id="cal-header">
+    <p>Target: <strong>1500 kcal</strong></p>
+    <p>Consumed: <strong id="consumed">0</strong> kcal</p>
+    <p>Remaining: <strong id="remaining"></strong></p>
+    <p>Green/Yellow/Red Score: <strong id="gyr-score">0</strong></p>
+  </div>
+
+  <input id="manual-cal" type="number" placeholder="calories">
+  <button onclick="addCalories()">Add Calories</button>
+
+  <h3>Calorie History (Last 7 Days)</h3>
+  <div id="cal-history"></div>
+</section>
+
+
+<!---------------------------- ANALYSIS TAB ---------------------------->
+<section id="analysis-tab">
+  <h2>Craving / Decision Prompt</h2>
+  <div id="prompt-box">
+    <p id="prompt-text"></p>
+    <button onclick="nextPrompt()">Next Prompt</button>
+  </div>
+</section>
+
+
+<!---------------------------- HABITS TAB ---------------------------->
+<section id="habits-tab">
+  <h2>Habit Scoreboard</h2>
+  <ul id="habit-list">
+    <li><input id="h1" type="checkbox"> 8 cups water</li>
+    <li><input id="h2" type="checkbox"> 30 min walk</li>
+    <li><input id="h3" type="checkbox"> No sugar</li>
+    <li><input id="h4" type="checkbox"> 7+ hours sleep</li>
+  </ul>
+
+  <div id="streak-box">
+    <h3>Streak</h3>
+    <p id="streak-text"></p>
+  </div>
+</section>
+
+
+<!---------------------------- LESSONS TAB ---------------------------->
+<section id="lessons-tab">
+  <h2>Daily Micro-Lesson</h2>
+  <p id="lesson-text"></p>
+  <button onclick="nextLesson()">Next</button>
+</section>
+
+</main>
+
+<script>
+/* ---------------- BASIC TAB SWITCHING ---------------- */
+document.querySelectorAll("nav button").forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+
+    document.querySelectorAll("main section").forEach(sec => sec.classList.remove("active"));
+    document.getElementById(btn.dataset.tab).classList.add("active");
+  };
+});
+
+
+/* ---------------- WEIGHT & PROJECTION ---------------- */
+let weights = JSON.parse(localStorage.getItem("weights")) || [];
+
+function addWeight() {
+  const w = parseFloat(document.getElementById("weight-input").value);
+  if (!w) return;
+  weights.push(w);
+  localStorage.setItem("weights", JSON.stringify(weights));
+  document.getElementById("weight-input").value = "";
+  renderTrend();
+  updateProjection();
+}
+
+function renderTrend() {
+  const t = document.getElementById("trend");
+  t.innerHTML = "";
+  if (weights.length === 0) return;
+
+  const max = Math.max(...weights);
+  const min = Math.min(...weights);
+
+  weights.forEach(w => {
+    const bar = document.createElement("div");
+    bar.className = "bar";
+    bar.title = w + " lbs";
+    bar.style.height = ((w - min) / (max - min + 0.01)) * 100 + "%";
+    t.appendChild(bar);
+  });
+}
+
+function updateProjection() {
+  const box = document.getElementById("projection-text");
+  if (weights.length < 2) {
+    box.innerText = "Add more entries for projection.";
+    return;
+  }
+
+  const last = weights[weights.length - 1];
+  const first = weights[Math.max(weights.length - 7, 0)];
+  const rate = first - last;
+
+  const dailyDrop = rate / Math.max(1, Math.min(7, weights.length));
+  const toLose = last - 170;
+
+  const daysNeeded = toLose / dailyDrop;
+
+  if (daysNeeded > 0 && isFinite(daysNeeded)) {
+    const finishDate = new Date(Date.now() + daysNeeded * 86400000);
+    box.innerText = "At your current 7-day trend, you will reach 170 lbs around " + finishDate.toDateString();
+  } else {
+    box.innerText = "Trend not strong enough for projection yet.";
+  }
+}
+
+renderTrend();
+updateProjection();
+
+
+/* ---------------- DAILY CALORIES ---------------- */
+const TARGET = 1500;
+
+function loadDaily() {
+  const today = new Date().toLocaleDateString();
+  let d = JSON.parse(localStorage.getItem("calories")) || {};
+
+  if (d.date !== today) {
+    d = { date: today, total: 0, g: 0, y: 0, r: 0 };
+    localStorage.setItem("calories", JSON.stringify(d));
+  }
+  return d;
+}
+
+function saveDaily(d) {
+  localStorage.setItem("calories", JSON.stringify(d));
+  updateCalUI();
+}
+
+function addCalories() {
+  const v = parseFloat(document.getElementById("manual-cal").value);
+  if (!v) return;
+
+  let d = loadDaily();
+  d.total += v;
+  saveDaily(d);
+
+  document.getElementById("manual-cal").value = "";
+}
+
+function updateCalUI() {
+  const d = loadDaily();
+  document.getElementById("consumed").innerText = d.total;
+  document.getElementById("remaining").innerText = TARGET - d.total;
+  document.getElementById("gyr-score").innerText = d.g + "/" + d.y + "/" + d.r;
+
+  const box = document.getElementById("cal-header");
+  const rem = TARGET - d.total;
+
+  box.style.background = rem > 400 ? "#c8e6c9" :
+                         rem > 0 ? "#fff59d" :
+                                   "#ef9a9a";
+
+  updateCalHistory();
+}
+
+updateCalUI();
+
+
+/* ---------------- CALORIE HISTORY GRAPH ---------------- */
+function updateCalHistory() {
+  const history = JSON.parse(localStorage.getItem("cal-history")) || [];
+  const container = document.getElementById("cal-history");
+  container.innerHTML = "";
+
+  const max = Math.max(1500, ...history);
+
+  history.slice(-7).forEach(v => {
+    const bar = document.createElement("div");
+    bar.className = "bar";
+    bar.style.height = (v / max) * 100 + "%";
+    bar.style.background = v <= TARGET ? "#4caf50" : "#f44336";
+    bar.title = v + " kcal";
+    container.appendChild(bar);
+  });
+}
+
+
+/* ---------------- ESTIMATOR ---------------- */
+let lastEstimate = 0;
+
+function estimateCalories() {
+  const g = parseFloat(document.getElementById("grams").value);
+  const c = parseFloat(document.getElementById("cal100").value);
+  if (!g || !c) return;
+
+  lastEstimate = (g * c) / 100;
+  document.getElementById("cal-result").innerText =
+    "Calories: " + lastEstimate.toFixed(1);
+}
+
+function addEstimated() {
+  if (!lastEstimate) return alert("Estimate first.");
+
+  let d = loadDaily();
+  d.total += lastEstimate;
+
+  /* Auto-score G/Y/R by density */
+  if (lastEstimate < 120) d.g++;
+  else if (lastEstimate < 250) d.y++;
+  else d.r++;
+
+  saveDaily(d);
+  document.getElementById("cal-result").innerText = "Added.";
+}
+
+
+/* ---------------- HABITS & STREAKS ---------------- */
+document.querySelectorAll("#habit-list input").forEach(h => {
+  h.checked = JSON.parse(localStorage.getItem(h.id)) || false;
+
+  h.onchange = () => {
+    localStorage.setItem(h.id, h.checked);
+    updateStreak();
+  };
+});
+
+function updateStreak() {
+  const today = new Date().toLocaleDateString();
+  let streak = JSON.parse(localStorage.getItem("streak")) || { last: "", count: 0 };
+
+  const all = [...document.querySelectorAll("#habit-list input")].every(h => h.checked);
+
+  if (all) {
+    if (streak.last === today) return;
+
+    if (
+      new Date(streak.last).getTime() + 86400000 ===
+      new Date(today).getTime()
+    ) {
+      streak.count++;
+    } else {
+      streak.count = 1;
+    }
+    streak.last = today;
+    localStorage.setItem("streak", JSON.stringify(streak));
+  }
+
+  document.getElementById("streak-text").innerText =
+    streak.count + " day streak";
+}
+
+updateStreak();
+
+
+/* ---------------- DECISION PROMPTS ---------------- */
+const prompts = [
+  "What emotion did you feel right before the craving?",
+  "If you waited 10 minutes, what would happen?",
+  "Are you hungry or bored?",
+  "Would a glass of water fix this?",
+  "What would future-you choose?",
+  "What is the smallest healthy action you can take now?"
+];
+
+let pIndex = 0;
+function nextPrompt() {
+  document.getElementById("prompt-text").innerText = prompts[pIndex];
+  pIndex = (pIndex + 1) % prompts.length;
+}
+nextPrompt();
+
+
+/* ---------------- LESSONS ---------------- */
+const lessons = [
+  "Small wins compound faster than motivation.",
+  "Control environment > control willpower.",
+  "Plan meals to reduce decision fatigue.",
+  "Slow eating reduces intake by 20–30%.",
+  "Hydration reduces false hunger signals.",
+  "Walk after eating for better glucose control."
+];
+let ls = 0;
+
+function nextLesson() {
+  document.getElementById("lesson-text").innerText = lessons[ls];
+  ls = (ls + 1) % lessons.length;
+}
+nextLesson();
+</script>
+
+</body>
+</html>
